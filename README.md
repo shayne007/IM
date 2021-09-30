@@ -6,6 +6,7 @@
 
 
 ## IM系统架构设计
+client客户端服务端chat-server集群
 
 ## IM系统功能模块设计
-
+gi
