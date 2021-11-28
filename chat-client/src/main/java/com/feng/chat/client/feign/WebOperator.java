@@ -1,21 +1,19 @@
 package com.feng.chat.client.feign;
 
-import com.feng.common.constants.ServerConstants;
-import com.feng.common.entity.LoginBackMsg;
-import com.feng.common.util.JsonUtil;
+import com.feng.chat.common.constants.ServerConstants;
+import com.feng.chat.common.entity.LoginBackMsg;
 import feign.Feign;
-import feign.codec.StringDecoder;
+import feign.gson.GsonDecoder;
 
 public class WebOperator {
 
     public static LoginBackMsg login(String userName, String password) {
         UserActionClient action = Feign.builder()
-                .decoder(new StringDecoder())
+                .decoder(new GsonDecoder())
                 .target(UserActionClient.class, ServerConstants.WEB_URL);
 
-        String s = action.loginAction(userName, password);
+        LoginBackMsg backMsg = action.loginAction(userName, password);
 
-        LoginBackMsg backMsg = JsonUtil.jsonToPojo(s, LoginBackMsg.class);
         return backMsg;
     }
 }

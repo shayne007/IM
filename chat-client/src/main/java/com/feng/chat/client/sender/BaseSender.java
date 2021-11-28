@@ -1,10 +1,10 @@
 package com.feng.chat.client.sender;
 
 import com.feng.chat.client.session.ClientSession;
-import com.feng.common.concurrent.CallbackTask;
-import com.feng.common.concurrent.CallbackTaskScheduler;
-import com.feng.common.msg.ProtoMsg;
-import com.feng.common.msg.UserDTO;
+import com.feng.chat.common.concurrent.CallbackTask;
+import com.feng.chat.common.concurrent.CallbackTaskScheduler;
+import com.feng.chat.common.msg.UserDTO;
+import com.feng.chat.common.msg.proto.ProtoMsg;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -37,9 +37,12 @@ public abstract class BaseSender {
         return session.isLogin();
     }
 
+    /**
+     * 异步发送消息
+     *
+     * @param message
+     */
     public void sendMsg(ProtoMsg.Message message) {
-
-
         CallbackTaskScheduler.add(new CallbackTask<Boolean>() {
             @Override
             public Boolean execute() throws Exception {

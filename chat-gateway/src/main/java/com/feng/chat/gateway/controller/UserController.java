@@ -1,12 +1,12 @@
 package com.feng.chat.gateway.controller;
 
+import com.feng.chat.common.entity.ImNode;
+import com.feng.chat.common.entity.LoginBackMsg;
+import com.feng.chat.common.msg.UserDTO;
+import com.feng.chat.common.util.GsonUtil;
 import com.feng.chat.gateway.balance.LoadBalance;
 import com.feng.chat.gateway.mybatis.entity.UserPO;
 import com.feng.chat.gateway.service.UserService;
-import com.feng.common.entity.ImNode;
-import com.feng.common.entity.LoginBackMsg;
-import com.feng.common.msg.UserDTO;
-import com.feng.common.util.JsonUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,7 +50,13 @@ public class UserController {
         msg.setUserDTO(userDTO);
 
         msg.setToken(user.getUserId());
-        String result = JsonUtil.pojoToJson(msg);
+        String result = GsonUtil.pojoToJson(msg);
         return result;
+    }
+
+    @RequestMapping("/{userId}")
+    public String getUserById(@PathVariable("userId") String userId) {
+        UserPO user = userService.getUserById(userId);
+        return GsonUtil.pojoToJson(user);
     }
 }

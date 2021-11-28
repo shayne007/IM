@@ -1,8 +1,8 @@
 package com.feng.chat.gateway.balance;
 
-import java.util.List;
+import com.feng.chat.common.entity.ImNode;
 
-import com.feng.common.entity.ImNode;
+import java.util.List;
 
 /**
  * @author fengsy

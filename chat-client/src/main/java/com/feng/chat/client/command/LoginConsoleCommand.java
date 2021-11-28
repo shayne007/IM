@@ -16,15 +16,20 @@ public class LoginConsoleCommand implements BaseCommand {
     private String password;
 
     @Override
-    public void exec(Scanner scanner) {
+    public boolean exec(Scanner scanner) {
 
         System.out.println("请输入登录信息，格式为：用户名@密码 ");
         String s = scanner.next();
         String[] array = s.split("@");
 
+        if (array.length != 2) {
+            System.out.println("请输入登录信息，格式为：用户名@密码 ");
+            return false;
+        }
         userName = array[0];
         password = array[1];
         log.info("输入正确, 您输入的用户id是: {},密码是{}", userName, password);
+        return true;
     }
 
     @Override

@@ -6,9 +6,9 @@ package com.feng.chat.client.protoBuilder;
 
 
 import com.feng.chat.client.session.ClientSession;
-import com.feng.common.msg.ChatMsg;
-import com.feng.common.msg.ProtoMsg;
-import com.feng.common.msg.UserDTO;
+import com.feng.chat.common.msg.ChatMsg;
+import com.feng.chat.common.msg.UserDTO;
+import com.feng.chat.common.msg.proto.ProtoMsg;
 
 /**
  * 聊天消息Builder

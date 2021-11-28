@@ -1,7 +1,6 @@
 package com.feng.chat.client.session;
 
-import com.feng.common.msg.ProtoMsg;
-import com.feng.common.msg.UserDTO;
+import com.feng.chat.common.msg.UserDTO;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -14,22 +13,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Description TODO
+ * @Description 客户端session 将user和channel关联
  * @Author fengsy
  * @Date 9/30/21
  */
 @Slf4j
 @Data
 public class ClientSession {
-
-
-    public static final AttributeKey<ClientSession> SESSION_KEY =
-            AttributeKey.valueOf("SESSION_KEY");
-
-
     /**
-     * 用户实现客户端会话管理的核心
+     * 定义AttributeKey值，将Client Session保存到channel的AttributeMap容器中
      */
+    public static final AttributeKey<ClientSession> SESSION_KEY = AttributeKey.valueOf("SESSION_KEY");
+
     private Channel channel;
     private UserDTO user;
 
@@ -51,16 +46,6 @@ public class ClientSession {
         this.channel = channel;
         this.sessionId = String.valueOf(-1);
         channel.attr(ClientSession.SESSION_KEY).set(this);
-    }
-
-    //登录成功之后,设置sessionId
-    public static void loginSuccess(
-            ChannelHandlerContext ctx, ProtoMsg.Message pkg) {
-        Channel channel = ctx.channel();
-        ClientSession session = channel.attr(ClientSession.SESSION_KEY).get();
-        session.setSessionId(pkg.getSessionId());
-        session.setLogin(true);
-        log.info("登录成功");
     }
 
     //获取channel

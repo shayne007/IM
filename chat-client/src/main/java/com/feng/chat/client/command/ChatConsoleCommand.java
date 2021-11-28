@@ -16,15 +16,19 @@ public class ChatConsoleCommand implements BaseCommand {
     public static final String KEY = "2";
 
     @Override
-    public void exec(Scanner scanner) {
+    public boolean exec(Scanner scanner) {
         System.out.println("请输入聊天信息，格式为：内容@用户名 ");
         String s = scanner.next();
         String[] array = s.split("@");
-
+        if (array.length != 2) {
+            System.out.println("请正确输入聊天信息，格式为：内容@用户名 ");
+            return false;
+        }
         message = array[0];
         toUserId = array[1];
 
         log.info("发送的目标用户:{},发送内容:{}", toUserId, message);
+        return true;
     }
 
 

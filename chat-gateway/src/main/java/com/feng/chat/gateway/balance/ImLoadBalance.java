@@ -1,17 +1,15 @@
 package com.feng.chat.gateway.balance;
 
+import com.feng.chat.common.constants.ServerConstants;
+import com.feng.chat.common.entity.ImNode;
+import com.feng.chat.common.util.GsonUtil;
+import com.feng.chat.common.zk.CuratorZKclient;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.curator.framework.CuratorFramework;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.apache.curator.framework.CuratorFramework;
-
-import com.feng.common.constants.ServerConstants;
-import com.feng.common.entity.ImNode;
-import com.feng.common.util.JsonUtil;
-import com.feng.common.zk.CuratorZKclient;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Description im node 负载均衡实现
@@ -45,7 +43,7 @@ public class ImLoadBalance implements LoadBalance {
 
         log.info("全部节点如下：");
         workers.stream().forEach(node -> {
-            log.info("节点信息：{}", JsonUtil.pojoToJson(node));
+            log.info("节点信息：{}", GsonUtil.pojoToJson(node));
         });
         ImNode best = balance(workers);
 
@@ -55,8 +53,7 @@ public class ImLoadBalance implements LoadBalance {
     /**
      * 按照负载排序
      *
-     * @param items
-     *            所有的节点
+     * @param items 所有的节点
      * @return 负载最小的IM节点
      */
     protected ImNode balance(List<ImNode> items) {
@@ -67,7 +64,7 @@ public class ImLoadBalance implements LoadBalance {
             // 返回balance值最小的那个
             ImNode node = items.get(0);
 
-            log.info("最佳的节点为：{}", JsonUtil.pojoToJson(node));
+            log.info("最佳的节点为：{}", GsonUtil.pojoToJson(node));
             return node;
         } else {
             return null;
@@ -102,7 +99,7 @@ public class ImLoadBalance implements LoadBalance {
             if (null == payload) {
                 continue;
             }
-            ImNode node = JsonUtil.jsonBytes2Object(payload, ImNode.class);
+            ImNode node = GsonUtil.jsonBytes2Object(payload, ImNode.class);
             node.setId(getIdByPath(child));
 
             workers.add(node);
@@ -114,8 +111,7 @@ public class ImLoadBalance implements LoadBalance {
     /**
      * 取得IM 节点编号
      *
-     * @param path
-     *            路径
+     * @param path 路径
      * @return 编号
      */
     @Override

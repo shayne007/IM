@@ -1,9 +1,9 @@
 package com.feng.chat.client.sender;
 
 import com.feng.chat.client.protoBuilder.ChatMsgBuilder;
-import com.feng.common.msg.ChatMsg;
-import com.feng.common.msg.ProtoMsg;
-import com.feng.common.util.Logger;
+import com.feng.chat.common.msg.ChatMsg;
+import com.feng.chat.common.msg.proto.ProtoMsg;
+import com.feng.chat.common.util.Logger;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

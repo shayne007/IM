@@ -6,129 +6,76 @@ import com.feng.chat.client.command.ClientCommandMenu;
 import com.feng.chat.client.command.LoginConsoleCommand;
 import com.feng.chat.client.command.LogoutConsoleCommand;
 import com.feng.chat.client.feign.WebOperator;
+import com.feng.chat.client.listener.ChannelConnectedListener;
 import com.feng.chat.client.sender.ChatSender;
 import com.feng.chat.client.sender.LoginSender;
 import com.feng.chat.client.session.ClientSession;
-import com.feng.common.concurrent.FutureTaskScheduler;
-import com.feng.common.entity.ImNode;
-import com.feng.common.entity.LoginBackMsg;
-import com.feng.common.msg.UserDTO;
-import com.feng.common.util.JsonUtil;
+import com.feng.chat.common.concurrent.FutureTaskScheduler;
+import com.feng.chat.common.entity.ImNode;
+import com.feng.chat.common.entity.LoginBackMsg;
+import com.feng.chat.common.msg.UserDTO;
+import com.feng.chat.common.util.GsonUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
+/**
+ * @Description 客户端命令执行管理器，读取用户输入，根据不同的命令类型执行不同的操作
+ * @Author fengsy
+ * @Date 9/30/21
+ */
 @Slf4j
 @Data
 @Service("CommandManager")
 public class CommandManager {
-    private int reConnectCount = 0;
 
-    //聊天命令收集类
-    @Autowired
+    private Channel channel;
+    public int reConnectCount = 0;
+    private boolean connectFlag = false;
+    @Resource
+    private NettyClient nettyClient;
+    private ClientSession session;
+
+    @Resource
     ChatConsoleCommand chatConsoleCommand;
 
-    //登录命令收集类
-    @Autowired
+    @Resource
     LoginConsoleCommand loginConsoleCommand;
 
-    //登出命令收集类
-    @Autowired
+    @Resource
     LogoutConsoleCommand logoutConsoleCommand;
 
-    //菜单命令收集类
-    @Autowired
+    @Resource
     ClientCommandMenu clientCommandMenu;
 
     private Map<String, BaseCommand> commandMap;
 
     private String menuString;
 
-    //会话类
-    private ClientSession session;
-
-
-    @Autowired
-    private NettyClient nettyClient;
-
-    private Channel channel;
-
-    @Autowired
+    @Resource
     private ChatSender chatSender;
 
-    @Autowired
+    @Resource
     private LoginSender loginSender;
 
-
-    private boolean connectFlag = false;
     private UserDTO user;
 
-    GenericFutureListener<ChannelFuture> closeListener = (ChannelFuture f) ->
-    {
-
-
-        log.info(new Date() + ": 连接已经断开……");
-        channel = f.channel();
-
-        // 创建会话
-        ClientSession session =
-                channel.attr(ClientSession.SESSION_KEY).get();
-        session.close();
-
-        //唤醒用户线程
-        notifyCommandThread();
-    };
-
-
-    GenericFutureListener<ChannelFuture> connectedListener = (ChannelFuture f) ->
-    {
-        final EventLoop eventLoop
-                = f.channel().eventLoop();
-        if (!f.isSuccess() && ++reConnectCount < 3) {
-            log.info("连接失败! 在10s之后准备尝试第{}次重连!", reConnectCount);
-            eventLoop.schedule(
-                    () -> nettyClient.doConnect(),
-                    10,
-                    TimeUnit.SECONDS);
-
-            connectFlag = false;
-        } else if (f.isSuccess()) {
-            connectFlag = true;
-
-            log.info("疯狂创客圈 IM 服务器 连接成功!");
-            channel = f.channel();
-
-            // 创建会话
-            session = new ClientSession(channel);
-            session.setConnected(true);
-            channel.closeFuture().addListener(closeListener);
-
-            //唤醒用户线程
-            notifyCommandThread();
-        } else {
-            log.info("疯狂创客圈 IM 服务器 多次连接失败!");
-            connectFlag = false;
-            //唤醒用户线程
-            notifyCommandThread();
-        }
-
-    };
     private Scanner scanner;
+
+    private GenericFutureListener<ChannelFuture> connectedListener;
 
 
     public void initCommandMap() {
@@ -138,55 +85,64 @@ public class CommandManager {
         commandMap.put(loginConsoleCommand.getKey(), loginConsoleCommand);
         commandMap.put(logoutConsoleCommand.getKey(), logoutConsoleCommand);
 
-        Set<Map.Entry<String, BaseCommand>> entrys =
-                commandMap.entrySet();
-        Iterator<Map.Entry<String, BaseCommand>> iterator =
-                entrys.iterator();
+        Set<Map.Entry<String, BaseCommand>> entrys = commandMap.entrySet();
+        Iterator<Map.Entry<String, BaseCommand>> iterator = entrys.iterator();
 
         StringBuilder menus = new StringBuilder();
         menus.append("[menu] ");
         while (iterator.hasNext()) {
             BaseCommand next = iterator.next().getValue();
-
-            menus.append(next.getKey())
-                    .append("->")
-                    .append(next.getTip())
-                    .append(" | ");
+            menus.append(next.getKey()).append("->").append(next.getTip()).append(" | ");
 
         }
         menuString = menus.toString();
-
         clientCommandMenu.setAllCommandsShow(menuString);
-
-
     }
 
+    public void startCommandThread() throws InterruptedException {
+        scanner = new Scanner(System.in);
+        Thread.currentThread().setName("命令线程");
 
-    public void startConnectServer() {
+        while (true) {
+            //建立连接,处理登录命令
+            while (connectFlag == false) {
+                userLoginAndConnectToServer();
+            }
+            //建立建立后，处理用户输入的不同操作命令
+            while (null != session) {
+                clientCommandMenu.exec(scanner);
+                String key = clientCommandMenu.getCommandInput();
+                BaseCommand command = commandMap.get(key);
 
-        FutureTaskScheduler.add(() ->
-        {
-            nettyClient.setConnectedListener(connectedListener);
-            nettyClient.doConnect();
-        });
-    }
+                if (null == command) {
+                    System.err.println("无法识别[" + command + "]指令，请重新输入!");
+                    continue;
+                }
 
+                switch (key) {
+                    case ChatConsoleCommand.KEY:
+                        boolean ok = command.exec(scanner);
+                        if (ok) {
+                            startOneChat((ChatConsoleCommand) command);
+                        }
 
-    public synchronized void notifyCommandThread() {
-        //唤醒，命令收集程
-        this.notify();
+                        break;
+                    case LoginConsoleCommand.KEY:
+                        boolean okLogin = command.exec(scanner);
+                        if (okLogin) {
+                            userLoginAndConnectToServer();
+                        }
+                        break;
 
-    }
-
-    public synchronized void waitCommandThread() {
-
-        //休眠，命令收集线程
-        try {
-            this.wait();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+                    case LogoutConsoleCommand.KEY:
+                        boolean logoutOk = command.exec(scanner);
+                        if (logoutOk) {
+                            startLogout(command);
+                        }
+                        break;
+                }
+            }
         }
-
     }
 
     /**
@@ -199,10 +155,8 @@ public class CommandManager {
             log.info("已经登录成功，不需要重复登录");
             return;
         }
-        LoginConsoleCommand command =
-                (LoginConsoleCommand) commandMap.get(LoginConsoleCommand.KEY);
+        LoginConsoleCommand command = (LoginConsoleCommand) commandMap.get(LoginConsoleCommand.KEY);
         command.exec(scanner);
-
 
         UserDTO user = new UserDTO();
         user.setUserId(command.getUserName());
@@ -211,34 +165,28 @@ public class CommandManager {
 
         log.info("step1：开始登录WEB GATE");
         LoginBackMsg webBack = WebOperator.login(command.getUserName(), command.getPassword());
-        //ImNode node = webBack.getImNode();
-        //获取服务器节点信息，选择负载最低的节点连接(客户端选择，选择的节点可能已经挂掉，但是zk超时的原因节点信息还在，连接不了，需要重试其他节点)
         List<ImNode> nodeList = webBack.getImNodeList();
-        log.info("step1 WEB GATE 返回的node节点列表是：{}", JsonUtil.pojoToJson(nodeList));
+        log.info("step1 WEB GATE 返回的node节点列表是：{}", GsonUtil.pojoToJson(nodeList));
 
         log.info("step2：开始连接Netty 服务节点");
-
-        ImNode bestNode = null;
-        if (nodeList.size() > 0) {
+        if (!CollectionUtils.isEmpty(nodeList)) {
             // 根据load值由小到大排序
             Collections.sort(nodeList);
-
         } else {
             log.error("step2-1：服务器节点为空，无法连接");
         }
-
+        connectedListener = new ChannelConnectedListener(this);
         nettyClient.setConnectedListener(connectedListener);
-
+        //获取服务器节点信息，选择负载最低的节点连接
+        ImNode bestNode;
         for (int i = 0; i < nodeList.size(); i++) {
-            // 返回load值最小的那个
             bestNode = nodeList.get(i);
-
-            log.info("尝试连接最佳的节点为：{}", JsonUtil.pojoToJson(bestNode));
-
+            log.info("尝试连接最佳的节点为：{}", GsonUtil.pojoToJson(bestNode));
             nettyClient.setHost(bestNode.getHost());
             nettyClient.setPort(bestNode.getPort());
             nettyClient.doConnect();
             waitCommandThread();
+            //客户端选择的节点可能已经挂掉，但是zk的节点信息还在，连接不了，需要重试其他节点
             if (connectFlag) {
                 break;
             }
@@ -247,14 +195,10 @@ public class CommandManager {
                 return;
             }
         }
-
-        //waitCommandThread();
-
+//        waitCommandThread();
         log.info("step2：Netty 服务节点连接成功");
 
-
         log.info("step3：开始登录Netty 服务节点");
-
         this.user = user;
         session.setUser(user);
         loginSender.setUser(user);
@@ -265,49 +209,26 @@ public class CommandManager {
         connectFlag = true;
     }
 
-    public void startCommandThread() throws InterruptedException {
-        scanner = new Scanner(System.in);
-        Thread.currentThread().setName("命令线程");
-
-        while (true) {
-            //建立连接
-            while (connectFlag == false) {
-                //输入用户名，然后登录
-                userLoginAndConnectToServer();
-            }
-            //处理命令
-            while (null != session) {
-                ChatConsoleCommand command = (ChatConsoleCommand) commandMap.get(ChatConsoleCommand.KEY);
-                command.exec(scanner);
-                startOneChat(command);
-
-            /*    clientCommandMenu.exec(scanner);
-                String key = clientCommandMenu.getCommandInput();
-                BaseCommand command = commandMap.get(key);
-
-                if (null == command) {
-                    System.err.println("无法识别[" + command + "]指令，请重新输入!");
-                    continue;
-                }
-
-
-                switch (key) {
-                    case ChatConsoleCommand.KEY:
-                        command.exec(scanner);
-                        startOneChat((ChatConsoleCommand) command);
-                        break;
-
-
-
-                    case LogoutConsoleCommand.KEY:
-                        command.exec(scanner);
-                        startLogout(command);
-                        break;
-
-                }*/
-            }
+    public synchronized void waitCommandThread() {
+        try {
+            this.wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
+
+    public synchronized void notifyCommandThread() {
+        this.notify();
+    }
+
+    public void startConnectServer() {
+        FutureTaskScheduler.add(() ->
+        {
+            nettyClient.setConnectedListener(connectedListener);
+            nettyClient.doConnect();
+        });
+    }
+
 
     //发送单聊消息
     private void startOneChat(ChatConsoleCommand c) {
@@ -330,7 +251,7 @@ public class CommandManager {
             log.info("还没有登录，请先登录");
             return;
         }
-        //todo 登出
+        session.close();
     }
 
 

@@ -3,13 +3,9 @@ package com.feng.chat.client.service;
 import com.feng.chat.client.handler.ChatMsgHandler;
 import com.feng.chat.client.handler.ExceptionHandler;
 import com.feng.chat.client.handler.LoginResponseHandler;
-import com.feng.chat.client.sender.ChatSender;
-import com.feng.chat.client.sender.LoginSender;
-import com.feng.common.msg.ProtoMsg;
-import com.feng.common.msg.UserDTO;
+import com.feng.chat.common.msg.proto.ProtoMsg;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -17,10 +13,10 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
+import io.netty.handler.codec.protobuf.ProtobufVarint32FrameDecoder;
+import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * @Description TODO
+ * @Description netty客户端，与server建立socket连接
  * @Author fengsy
  * @Date 9/30/21
  */
@@ -52,34 +48,15 @@ public class NettyClient {
     @Autowired
     private ExceptionHandler exceptionHandler;
 
-
-    private Channel channel;
-    private ChatSender sender;
-    private LoginSender loginSender;
-    /**
-     * 唯一标记
-     */
     private boolean initFalg = true;
-    private UserDTO user;
+
     private GenericFutureListener<ChannelFuture> connectedListener;
 
-    private Bootstrap b;
-    private EventLoopGroup g;
+    private Bootstrap bootstrap;
+    private EventLoopGroup group;
 
     public NettyClient() {
-
-        /**
-         * 客户端的是Bootstrap，服务端的则是 ServerBootstrap。
-         * 都是AbstractBootstrap的子类。
-         **/
-
-        /**
-         * 通过nio方式来接收连接和处理连接
-         */
-
-        g = new NioEventLoopGroup();
-
-
+        group = new NioEventLoopGroup();
     }
 
     /**
@@ -87,23 +64,22 @@ public class NettyClient {
      */
     public void doConnect() {
         try {
-            b = new Bootstrap();
+            bootstrap = new Bootstrap();
 
-            b.group(g);
-            b.channel(NioSocketChannel.class);
-            b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-            b.remoteAddress(host, port);
+            bootstrap.group(group);
+            bootstrap.channel(NioSocketChannel.class);
+            bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+            bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+            bootstrap.remoteAddress(host, port);
 
             // 设置通道初始化
-            b.handler(
+            bootstrap.handler(
                     new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) {
-                            ch.pipeline().addLast("frameDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0,
-                                    4));
+                            ch.pipeline().addLast("frameDecoder", new ProtobufVarint32FrameDecoder());
                             ch.pipeline().addLast("decoder", new ProtobufDecoder(ProtoMsg.Message.getDefaultInstance()));
-                            ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(4));
+                            ch.pipeline().addLast("frameEncoder", new ProtobufVarint32LengthFieldPrepender());
                             ch.pipeline().addLast("encoder", new ProtobufEncoder());
                             ch.pipeline().addLast("loginResponseHandler", loginResponseHandler);
                             ch.pipeline().addLast("chatMsgHandler", chatMsgHandler);
@@ -111,9 +87,9 @@ public class NettyClient {
                         }
                     }
             );
-            log.info("客户端开始连接 [疯狂创客圈IM]");
+            log.info("客户端开始连接 [IM Server]");
 
-            ChannelFuture f = b.connect();
+            ChannelFuture f = bootstrap.connect();
             f.addListener(connectedListener);
 
 

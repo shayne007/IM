@@ -5,8 +5,8 @@
 package com.feng.chat.client.protoBuilder;
 
 import com.feng.chat.client.session.ClientSession;
-import com.feng.common.msg.ProtoMsg;
-import com.feng.common.msg.UserDTO;
+import com.feng.chat.common.msg.UserDTO;
+import com.feng.chat.common.msg.proto.ProtoMsg;
 
 /**
  * 登陆消息Builder
@@ -21,19 +21,16 @@ public class LoginMsgBuilder extends BaseBuilder {
 
     public ProtoMsg.Message build() {
         ProtoMsg.Message message = buildCommon(-1);
-        ProtoMsg.LoginRequest.Builder lb =
-                ProtoMsg.LoginRequest.newBuilder()
-                        .setDeviceId(user.getDevId())
-                        .setPlatform(user.getPlatform().ordinal())
-                        .setToken(user.getToken())
-                        .setUid(user.getUserId());
+        ProtoMsg.LoginRequest.Builder lb = ProtoMsg.LoginRequest.newBuilder()
+                .setDeviceId(user.getDevId())
+                .setPlatform(user.getPlatform().ordinal())
+                .setToken(user.getToken())
+                .setUid(user.getUserId());
         return message.toBuilder().setLoginRequest(lb).build();
     }
 
-    public static ProtoMsg.Message buildLoginMsg(
-            UserDTO user, ClientSession session) {
-        LoginMsgBuilder builder =
-                new LoginMsgBuilder(user, session);
+    public static ProtoMsg.Message buildLoginMsg(UserDTO user, ClientSession session) {
+        LoginMsgBuilder builder = new LoginMsgBuilder(user, session);
         return builder.build();
 
     }

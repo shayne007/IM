@@ -1,13 +1,11 @@
 package com.feng.chat.gateway.service;
 
-import javax.annotation.Resource;
-
-import org.springframework.stereotype.Service;
-
 import com.feng.chat.gateway.mybatis.entity.UserPO;
 import com.feng.chat.gateway.mybatis.mapper.UserMapper;
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
 
 /**
  * @Description user service implementation
@@ -30,6 +28,13 @@ public class UserService {
 
         }
         return u;
+    }
+
+    public UserPO getUserById(String userId) {
+        UserPO user = new UserPO();
+        user.setUserId(userId);
+        UserPO userPO = userMapper.selectOne(user);
+        return userPO;
     }
 
 }

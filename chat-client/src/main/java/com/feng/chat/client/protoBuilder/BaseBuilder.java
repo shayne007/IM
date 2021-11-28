@@ -1,12 +1,10 @@
 package com.feng.chat.client.protoBuilder;
 
 import com.feng.chat.client.session.ClientSession;
-import com.feng.common.msg.ProtoMsg;
+import com.feng.chat.common.msg.proto.ProtoMsg;
 
 /**
- * 基础 Builder
- *
- * @author 尼恩 at  疯狂创客圈
+ * 基础消息构造器
  */
 public class BaseBuilder {
     protected ProtoMsg.HeadType type;

@@ -1,8 +1,7 @@
 package com.feng.chat.client.handler;
 
 
-import com.feng.chat.client.sender.LoginSender;
-import com.feng.common.msg.ProtoMsg;
+import com.feng.chat.common.msg.proto.ProtoMsg;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -11,13 +10,6 @@ import org.springframework.stereotype.Service;
 @ChannelHandler.Sharable
 @Service("ChatMsgHandler")
 public class ChatMsgHandler extends ChannelInboundHandlerAdapter {
-
-    private LoginSender sender;
-
-    public ChatMsgHandler(LoginSender sender) {
-        this.sender = sender;
-    }
-
 
     /**
      * 业务逻辑处理

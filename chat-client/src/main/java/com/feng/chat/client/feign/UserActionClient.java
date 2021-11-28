@@ -1,12 +1,13 @@
 package com.feng.chat.client.feign;
 
 
+import com.feng.chat.common.entity.LoginBackMsg;
+import com.feng.chat.common.msg.UserDTO;
 import feign.Param;
 import feign.RequestLine;
 
 /**
  * 远程接口的本地代理
- * Created by 尼恩 at 疯狂创客圈
  */
 public interface UserActionClient {
 
@@ -18,7 +19,7 @@ public interface UserActionClient {
      * @return 登录结果
      */
     @RequestLine("GET /user/login/{username}/{password}")
-    public String loginAction(
+    LoginBackMsg loginAction(
             @Param("username") String username,
             @Param("password") String password);
 
@@ -29,8 +30,8 @@ public interface UserActionClient {
      * @param userid 用户id
      * @return 用户信息
      */
-    @RequestLine("GET /{userid}")
-    public String getById(@Param("userid") Integer userid);
+    @RequestLine("GET /user/{userid}")
+    UserDTO getById(@Param("userid") Integer userid);
 
 
 }

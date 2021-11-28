@@ -2,8 +2,8 @@ package com.feng.chat.client.handler;
 
 import com.feng.chat.client.service.CommandManager;
 import com.feng.chat.client.session.ClientSession;
-import com.feng.common.constants.ResultCodeEnum;
-import com.feng.common.msg.ProtoMsg;
+import com.feng.chat.common.constants.ResultCodeEnum;
+import com.feng.chat.common.msg.proto.ProtoMsg;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 public class LoginResponseHandler extends ChannelInboundHandlerAdapter {
 
     @Autowired
-    CommandManager commandController;
+    CommandManager commandManager;
     @Autowired
     HeartBeatClientHandler heartBeatClientHandler;
 
@@ -53,13 +53,12 @@ public class LoginResponseHandler extends ChannelInboundHandlerAdapter {
             log.info("step3：登录Netty 服务节点失败");
         } else {
 
-            ClientSession session =
-                    ctx.channel().attr(ClientSession.SESSION_KEY).get();
+            ClientSession session = ctx.channel().attr(ClientSession.SESSION_KEY).get();
             session.setSessionId(pkg.getSessionId());
             session.setLogin(true);
 
             log.info("step3：登录Netty 服务节点成功");
-            commandController.notifyCommandThread();
+            commandManager.notifyCommandThread();
 
 //            ctx.channel().pipeline().addAfter("loginResponseHandler", "heartBeatClientHandler", heartBeatClientHandler);
             heartBeatClientHandler.channelActive(ctx);

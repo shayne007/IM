@@ -16,7 +16,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="chat-gateway" options="-parameters" />
+      <module name="chat-gateway" options="" />
     </option>
   </component>
 </project>

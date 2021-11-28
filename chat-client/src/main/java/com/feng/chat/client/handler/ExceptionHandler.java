@@ -1,8 +1,8 @@
 package com.feng.chat.client.handler;
 
 import com.feng.chat.client.service.CommandManager;
-import com.feng.common.exception.BusinessException;
-import com.feng.common.exception.InvalidFrameException;
+import com.feng.chat.common.exception.BusinessException;
+import com.feng.chat.common.exception.InvalidFrameException;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

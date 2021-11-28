@@ -9,8 +9,8 @@ public class LogoutConsoleCommand implements BaseCommand {
     public static final String KEY = "10";
 
     @Override
-    public void exec(Scanner scanner) {
-
+    public boolean exec(Scanner scanner) {
+        return true;
     }
 
 

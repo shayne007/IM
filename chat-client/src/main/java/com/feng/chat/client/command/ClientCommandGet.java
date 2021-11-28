@@ -15,14 +15,14 @@ public class ClientCommandGet implements BaseCommand {
     private String commandInput;
 
     @Override
-    public void exec(Scanner scanner) {
+    public boolean exec(Scanner scanner) {
 
         System.err.println("请输入某个操作指令：");
         System.err.println(allCommandsShow);
         //  获取第一个指令
         commandInput = scanner.next();
 
-
+        return true;
     }
 
 
