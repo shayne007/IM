@@ -30,7 +30,6 @@ public interface UserCacheDAO {
      */
     void addSession(String uid, SessionCache session);
 
-
     /**
      * 删除 用户的  会话
      *

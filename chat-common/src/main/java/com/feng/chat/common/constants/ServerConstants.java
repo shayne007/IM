@@ -18,7 +18,8 @@ public class ServerConstants {
     // 统计用户数的znode
     public static final String COUNTER_PATH = "/im/OnlineCounter";
 
-    public static final String WEB_URL = "http://localhost:8080";
+    public static final String WEB_URL = "http://localhost:8090";
+    public static final String SESSION_KEY = "user";
 
     public static final AttributeKey<String> CHANNEL_NAME = AttributeKey.valueOf("CHANNEL_NAME");
 

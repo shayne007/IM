@@ -28,16 +28,13 @@ public class SessionCacheRedisImpl implements SessionCacheDAO {
     public void save(final SessionCache sessionCache) {
         String key = REDIS_PREFIX + sessionCache.getSessionId();
         String value = GsonUtil.pojoToJson(sessionCache);
-
         stringRedisTemplate.opsForValue().set(key, value, CACHE_EXPIRE_MIN, TimeUnit.MINUTES);
-
     }
 
     @Override
     public SessionCache get(String sessionId) {
         String key = REDIS_PREFIX + sessionId;
         String value = stringRedisTemplate.opsForValue().get(key);
-
         if (!StringUtils.isEmpty(value)) {
             return GsonUtil.jsonToPojo(value, SessionCache.class);
         }

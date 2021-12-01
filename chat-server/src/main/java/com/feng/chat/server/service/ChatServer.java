@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Description netty 实现的chat server
@@ -43,6 +44,7 @@ public class ChatServer {
     private int port;
     private EventLoopGroup boss;
     private EventLoopGroup worker;
+    private ChannelFuture channelFuture;
 
     private ServerBootstrap bootstrap = new ServerBootstrap();
 
@@ -89,11 +91,11 @@ public class ChatServer {
             }
         });
 
-        ChannelFuture channelFuture = null;
         boolean isStart = false;
         while (!isStart) {
             try {
                 channelFuture = bootstrap.bind().sync();
+
                 log.info("IM Server启动, 端口为： " + channelFuture.channel().localAddress());
                 isStart = true;
             } catch (Exception e) {
@@ -103,14 +105,51 @@ public class ChatServer {
                 bootstrap.localAddress(new InetSocketAddress(port));
             }
         }
+        Runtime.getRuntime().addShutdownHook(new ShutdownThread());
 
         ImWorker.getInst().setLocalNode(ip, port);
 
+        FutureTaskScheduler.add(() -> {
+            try {
+                channelFuture.channel().closeFuture().sync();
+            } catch (Exception e) {
+                log.error("WebSocket Server start failed!", e);
+            }
+        });
         FutureTaskScheduler.add(() -> {
             ImWorker.getInst().init();
             WorkerRouter.getInst().init();
         });
 
+    }
+
+    class ShutdownThread extends Thread {
+        @Override
+        public void run() {
+            close();
+        }
+    }
+
+    public void close() {
+        if (bootstrap == null) {
+            log.info("WebSocket server is not running!");
+            return;
+        }
+
+        log.info("WebSocket server is stopping");
+        if (channelFuture != null) {
+            channelFuture.channel().close().awaitUninterruptibly(10, TimeUnit.SECONDS);
+            channelFuture = null;
+        }
+        if (bootstrap != null && bootstrap.config().group() != null) {
+            bootstrap.config().group().shutdownGracefully();
+        }
+        if (bootstrap != null && bootstrap.config().childGroup() != null) {
+            bootstrap.config().childGroup().shutdownGracefully();
+        }
+        bootstrap = null;
+
+        log.info("WebSocket server stopped");
     }
 
 }

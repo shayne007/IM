@@ -47,7 +47,6 @@ public class UserCacheRedisImpl implements UserCacheDAO {
         if (null == userCache) {
             userCache = new UserCache(uid);
         }
-
         userCache.addSession(session);
         save(userCache);
     }

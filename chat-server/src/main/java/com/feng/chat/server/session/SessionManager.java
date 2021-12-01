@@ -61,10 +61,8 @@ public class SessionManager {
                             //ImWorker.getInst().decreLoad();
                             // 分布式：分布式保存user和所有session，根据 sessionId 删除用户的会话
                             userCacheDAO.removeSession(uid, sessionId);
-
                             // step2:删除缓存session
                             sessionCacheDAO.remove(sessionId);
-
                             // 本地：从会话集合中，删除会话
                             sessionMap.remove(sessionId);
                             System.out.println(sessionMap);
@@ -82,26 +80,19 @@ public class SessionManager {
         //step1: 保存本地的session 到会话清单
         String sessionId = session.getSessionId();
         sessionMap.put(sessionId, session);
-
-
         String uid = session.getUser().getUserId();
-
-
         //step2: 缓存session到redis
         ImNode node = ImWorker.getInst().getLocalNode();
         SessionCache sessionCache = new SessionCache(sessionId, uid, node);
         sessionCacheDAO.save(sessionCache);
-
         //step3:增加用户的session 信息到用户缓存
         userCacheDAO.addSession(uid, sessionCache);
-
         //step4: 增加用户数
         OnlineCounter.getInst().increment();
         log.info("本地session增加：{},  在线总数:{} ",
                 GsonUtil.pojoToJson(session.getUser()),
                 OnlineCounter.getInst().getCurValue());
         ImWorker.getInst().increLoad();
-
         notifyOtherImNodeOnLine(session);
     }
 
@@ -139,23 +130,18 @@ public class SessionManager {
 
     // 关闭连接
     public void closeSession(ChannelHandlerContext ctx) {
-
         LocalSession session = ctx.channel().attr(LocalSession.SESSION_KEY).get();
-
         if (null == session || !session.isValid()) {
             log.error("session is null or isValid");
             return;
         }
-
         session.close();
         // 删除本地的会话和远程会话
         this.removeSession(session.getSessionId());
-
         /**
          * 通知其他节点 ，用户下线
          */
         notifyOtherImNodeOffLine(session);
-
     }
 
     /**
@@ -164,14 +150,11 @@ public class SessionManager {
      * @param session session
      */
     private void notifyOtherImNodeOffLine(LocalSession session) {
-
         if (null == session || session.isValid()) {
             log.error("session is null or isValid");
             return;
         }
-
         int type = Notification.SESSION_OFF;
-
         Notification<Notification.ContentWrapper> notification = Notification.wrapContent(session.getSessionId());
         notification.setType(type);
         WorkerRouter.getInst().sendNotification(GsonUtil.pojoToJson(notification));
@@ -201,13 +184,10 @@ public class SessionManager {
         ImWorker.getInst().decreLoad();
         // 分布式：分布式保存user和所有session，根据 sessionId 删除用户的会话
         userCacheDAO.removeSession(uid, sessionId);
-
         // step2:删除缓存session
         sessionCacheDAO.remove(sessionId);
-
         // 本地：从会话集合中，删除会话
         sessionMap.remove(sessionId);
-
     }
 
     /**

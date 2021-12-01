@@ -41,12 +41,10 @@ public class LoginResponseHandler extends ChannelInboundHandlerAdapter {
             return;
         }
 
-
         //判断返回是否成功
         ProtoMsg.LoginResponse info = pkg.getLoginResponse();
 
-        ResultCodeEnum result =
-                ResultCodeEnum.values()[info.getCode()];
+        ResultCodeEnum result = ResultCodeEnum.values()[info.getCode()];
 
         if (!result.equals(ResultCodeEnum.SUCCESS)) {
             log.info(result.getDesc());

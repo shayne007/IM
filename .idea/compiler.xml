@@ -10,6 +10,7 @@
         <module name="chat-common" />
         <module name="chat-server" />
         <module name="chat-client" />
+        <module name="chat-web" />
         <module name="chat-gateway" />
       </profile>
     </annotationProcessing>
